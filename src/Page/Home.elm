@@ -8,6 +8,7 @@ module Page.Home exposing
     , view
     )
 
+import Building exposing (Building)
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attrs
 import Html.Styled.Events as Events
@@ -29,16 +30,12 @@ import Util.Html as HtmlUtil
 
 type alias Model =
     { session : Session
-    , field : String
-    , timesEnterWasPressed : Int
-    , squareOfEnterPresses : Int
+    , buildings : List Building
     }
 
 
 type Msg
-    = FieldUpdated String
-    | EnterHappened
-    | ReceivedSquare Int
+    = Msg
 
 
 
@@ -50,9 +47,7 @@ type Msg
 init : Session -> Model
 init session =
     { session = session
-    , field = ""
-    , timesEnterWasPressed = 0
-    , squareOfEnterPresses = 0
+    , buildings =
     }
 
 
