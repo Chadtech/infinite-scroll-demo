@@ -1,8 +1,10 @@
 module Building exposing
     ( Building
+    , color
     , randomGenerator
     )
 
+import Hex
 import Random exposing (Seed)
 
 
@@ -14,6 +16,36 @@ type alias Building =
 
 type Id
     = Id Int Int Int
+
+
+color : Building -> String
+color building =
+    let
+        (Id idInt0 idInt1 idInt2) =
+            building.id
+
+        toColor : Int -> String
+        toColor int =
+            let
+                str =
+                    Hex.toString (int |> modBy 256)
+            in
+            if String.length str == 1 then
+                "0" ++ str
+
+            else
+                str
+
+        red =
+            toColor idInt0
+
+        green =
+            toColor idInt1
+
+        blue =
+            toColor idInt2
+    in
+    "#" ++ red ++ green ++ blue
 
 
 randomGenerator : Random.Generator (List Building)
@@ -45,7 +77,7 @@ randomGenerator =
             , "Fiesta Mall"
             , "Sun Ray Park"
             , "Alter Torbogen"
-            , "Finanzamt München"
+            , "Finanzamt"
             , "Weinerwald"
             , "You Little"
             , "Schloss Nymphenburg"
@@ -68,6 +100,11 @@ randomGenerator =
             , "Tempe Farmers Market"
             , "Studio 710 Apartments"
             , "Native New Yorker"
+            , "Kloster Andechs"
+            , "Rustic Lodge"
+            , "Stagger Lee"
+            , "Prospect Park"
+            , "LifeCycle WomanCare"
             ]
 
         fromIds : List Id -> List Building

@@ -1,4 +1,4 @@
-module Style exposing (fontSize, globals, p)
+module Style exposing (bgBackground1, bgBackground2, flex, flexCol, fontSize, g, globals, h, hFull, indent, justifyCenter, m, mt, none, p, scroll, w)
 
 import Chadtech.Colors as Ct
 import Css exposing (Style)
@@ -21,6 +21,7 @@ globals =
         [ Css.backgroundColor Ct.content1
         , Css.displayFlex
         , Css.flexDirection Css.column
+        , hFull
         ]
     , Css.Global.everything
         [ Css.boxSizing Css.borderBox
@@ -54,7 +55,11 @@ fontSize =
 
 size : Int -> Float
 size factor =
-    toFloat (2 ^ factor)
+    if factor == 0 then
+        0
+
+    else
+        toFloat (2 ^ factor)
 
 
 px : Int -> Css.Px
@@ -70,3 +75,79 @@ minWidth =
 p : Int -> Css.Style
 p =
     Css.padding << px
+
+
+w : Int -> Css.Style
+w =
+    Css.width << px
+
+
+g : Int -> Css.Style
+g s =
+    Css.property "gap" ((String.fromFloat <| size s) ++ "px")
+
+
+h : Int -> Css.Style
+h =
+    Css.height << px
+
+
+hFull : Style
+hFull =
+    Css.height <| Css.pct 100
+
+
+m : Int -> Style
+m =
+    Css.margin << px
+
+
+mt : Int -> Style
+mt =
+    Css.marginTop << px
+
+
+flex : Style
+flex =
+    Css.displayFlex
+
+
+flexCol : Style
+flexCol =
+    Css.batch
+        [ flex, Css.flexDirection Css.column ]
+
+
+justifyCenter : Style
+justifyCenter =
+    Css.justifyContent Css.center
+
+
+bgBackground1 : Style
+bgBackground1 =
+    Css.backgroundColor Ct.background1
+
+
+bgBackground2 : Style
+bgBackground2 =
+    Css.backgroundColor Ct.background2
+
+
+scroll : Style
+scroll =
+    Css.overflow Css.auto
+
+
+indent : Css.Style
+indent =
+    [ Css.borderLeft3 (px 1) Css.solid Ct.content0
+    , Css.borderTop3 (px 1) Css.solid Ct.content0
+    , Css.borderRight3 (px 1) Css.solid Ct.content2
+    , Css.borderBottom3 (px 1) Css.solid Ct.content2
+    ]
+        |> Css.batch
+
+
+none : Style
+none =
+    Css.batch []

@@ -9,18 +9,15 @@ module Page.Home exposing
     )
 
 import Building exposing (Building)
+import Css
 import Html.Styled as Html exposing (Html)
-import Html.Styled.Attributes as Attrs
-import Html.Styled.Events as Events
-import Json.Decode as Decode
+import Html.Styled.Attributes as Attr
 import Layout exposing (Document)
 import Ports.Incoming
-import Ports.Outgoing
 import Random
 import Session exposing (Session)
 import Style as S
 import Util.Cmd as CmdUtil
-import Util.Html as HtmlUtil
 
 
 
@@ -105,21 +102,76 @@ view model =
     Layout.document
         "Infinite Scroll"
         [ title
-        , scrollContainer
+        , Html.div
+            [ Attr.css
+                [ S.flex
+                , S.justifyCenter
+                , S.m 4
+                , S.mt 0
+                , Css.flex <| Css.int 1
+                , Css.minHeight Css.zero
+                ]
+            ]
+            [ scrollContainer model ]
         ]
 
 
-scrollContainer : Html msg
-scrollContainer =
+scrollContainer : Model -> Html msg
+scrollContainer model =
     Html.div
-        []
-        []
+        [ Attr.css
+            [ S.indent
+            , S.w 10
+            , S.hFull
+            , S.bgBackground1
+            , S.scroll
+            ]
+        ]
+        (List.indexedMap buildingRow model.buildings)
+
+
+buildingRow : Int -> Building -> Html msg
+buildingRow index building =
+    let
+        bgColor : Css.Style
+        bgColor =
+            if (index |> modBy 2) == 0 then
+                S.bgBackground2
+
+            else
+                S.none
+    in
+    Html.div
+        [ Attr.css
+            [ bgColor
+            , S.p 4
+            , S.flex
+            , S.g 4
+            ]
+        ]
+        [ Html.div
+            [ Attr.css
+                [ S.indent
+                , Css.backgroundColor <| Css.hex <| Building.color building
+                , S.w 5
+                , S.h 5
+                ]
+            ]
+            []
+        , Html.div
+            [ Attr.css
+                [ S.flexCol
+                , S.justifyCenter
+                ]
+            ]
+            [ Html.text building.name ]
+        ]
 
 
 title : Html Msg
 title =
     Html.div
-        [ Attrs.css
+        [ Attr.css
             [ S.p 4
             , S.fontSize 6
             ]
