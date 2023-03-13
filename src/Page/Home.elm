@@ -18,7 +18,7 @@ import Ports.Incoming
 import Ports.Outgoing
 import Random
 import Session exposing (Session)
-import Style
+import Style as S
 import Util.Cmd as CmdUtil
 import Util.Html as HtmlUtil
 
@@ -103,16 +103,28 @@ update msg model =
 view : Model -> Document Msg
 view model =
     Layout.document
-        "Gulp Elm Starter Project"
+        "Infinite Scroll"
         [ title
+        , scrollContainer
         ]
+
+
+scrollContainer : Html msg
+scrollContainer =
+    Html.div
+        []
+        []
 
 
 title : Html Msg
 title =
-    Html.p
-        [ Attrs.css [ Style.bigFont ] ]
-        [ Html.text "Elm Project : Go!" ]
+    Html.div
+        [ Attrs.css
+            [ S.p 4
+            , S.fontSize 6
+            ]
+        ]
+        [ Html.text "Infinite Scroll Demo" ]
 
 
 

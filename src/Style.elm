@@ -1,68 +1,72 @@
-module Style exposing
-    ( bigFont
-    , black
-    , globals
-    , lightGray
-    , red
-    , white0
-    , white1
-    )
+module Style exposing (fontSize, globals, p)
 
-import Css exposing (..)
+import Chadtech.Colors as Ct
+import Css exposing (Style)
 import Css.Global exposing (global)
 import Html.Styled exposing (Html)
 
 
 globals : Html msg
 globals =
-    [ Css.Global.p
-        [ fontFamilies [ "Arial" ]
-        , color black
+    [ Css.Global.button
+        [ hfnss
+        , fontSmoothingNone
+        , Css.outline Css.none
+        , minWidth 6
+        , Css.boxSizing Css.borderBox
+        , Css.cursor Css.pointer
+        , p 3
         ]
-    , Css.Global.input
-        [ fontFamilies [ "Arial" ]
-        , color black
-        , fontSize (em 2)
-        , backgroundColor white1
-        , border3 (px 2) solid lightGray
-        , outline none
-        , width (px 500)
+    , Css.Global.body
+        [ Css.backgroundColor Ct.content1
+        , Css.displayFlex
+        , Css.flexDirection Css.column
+        ]
+    , Css.Global.everything
+        [ Css.boxSizing Css.borderBox
+        , Css.margin Css.zero
+        , Css.padding Css.zero
+        , Css.color Ct.content4
+        , fontSmoothingNone
+        , hfnss
         ]
     ]
         |> global
 
 
-bigFont : Style
-bigFont =
-    fontSize (em 4)
+hfnss : Css.Style
+hfnss =
+    [ Css.fontFamilies [ "HFNSS" ]
+    , fontSize 5
+    ]
+        |> Css.batch
 
 
-
---------------------------------------------------------------------------------
--- COLORS --
---------------------------------------------------------------------------------
-
-
-black : Color
-black =
-    hex "#030907"
+fontSmoothingNone : Css.Style
+fontSmoothingNone =
+    Css.property "-webkit-font-smoothing" "none"
 
 
-white0 : Color
-white0 =
-    hex "#fcf7f9"
+fontSize : Int -> Css.Style
+fontSize =
+    Css.fontSize << px
 
 
-white1 : Color
-white1 =
-    hex "#f9fcfb"
+size : Int -> Float
+size factor =
+    toFloat (2 ^ factor)
 
 
-lightGray : Color
-lightGray =
-    hex "#d0b5a9"
+px : Int -> Css.Px
+px =
+    Css.px << size
 
 
-red : Color
-red =
-    hex "#f21d23"
+minWidth : Int -> Css.Style
+minWidth =
+    Css.minWidth << px
+
+
+p : Int -> Css.Style
+p =
+    Css.padding << px
