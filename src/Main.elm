@@ -93,11 +93,11 @@ update msg model =
     case msg of
         MsgDecodeFailed _ ->
             model
-                |> CmdUtil.withNoCmd
+                |> CmdUtil.withNone
 
         UrlRequested urlRequest ->
             model
-                |> CmdUtil.withNoCmd
+                |> CmdUtil.withNone
 
         RouteChanged maybeRoute ->
             handleRouteChange maybeRoute model
@@ -121,7 +121,7 @@ handleRouteChange maybeRoute model =
     case maybeRoute of
         Nothing ->
             PageNotFound session
-                |> CmdUtil.withNoCmd
+                |> CmdUtil.withNone
 
         Just route ->
             case route of

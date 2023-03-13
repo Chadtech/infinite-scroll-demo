@@ -16,6 +16,7 @@ import Json.Decode as Decode
 import Layout exposing (Document)
 import Ports.Incoming
 import Ports.Outgoing
+import Random
 import Session exposing (Session)
 import Style
 import Util.Cmd as CmdUtil
@@ -46,30 +47,26 @@ type Msg
 
 init : Session -> Model
 init session =
+    let
+        seed : Random.Seed
+        seed =
+            Random.initialSeed 2324
+
+        manyBuildings : Random.Seed -> Int -> List Building
+        manyBuildings seed0 howManyLists =
+            if howManyLists > 0 then
+                let
+                    ( nextBuildings, seed1 ) =
+                        Random.step Building.randomGenerator seed0
+                in
+                nextBuildings ++ manyBuildings seed1 (howManyLists - 1)
+
+            else
+                []
+    in
     { session = session
-    , buildings =
+    , buildings = manyBuildings seed 10
     }
-
-
-
---------------------------------------------------------------------------------
--- INTERNAL HELPERS --
---------------------------------------------------------------------------------
-
-
-setField : String -> Model -> Model
-setField newField model =
-    { model | field = newField }
-
-
-setSquareOfEnterPresses : Int -> Model -> Model
-setSquareOfEnterPresses newSquare model =
-    { model | squareOfEnterPresses = newSquare }
-
-
-incrementTimesEnterWasPressed : Model -> Model
-incrementTimesEnterWasPressed model =
-    { model | timesEnterWasPressed = model.timesEnterWasPressed + 1 }
 
 
 
@@ -92,37 +89,9 @@ getSession model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        FieldUpdated str ->
+        Msg ->
             model
-                |> setField str
-                |> CmdUtil.withNoCmd
-
-        EnterHappened ->
-            let
-                newModel : Model
-                newModel =
-                    incrementTimesEnterWasPressed model
-            in
-            ( newModel
-            , logAndSquare newModel
-            )
-
-        ReceivedSquare newSquare ->
-            model
-                |> setSquareOfEnterPresses newSquare
-                |> CmdUtil.withNoCmd
-
-
-logAndSquare : Model -> Cmd Msg
-logAndSquare model =
-    [ Ports.Outgoing.fromType_ "consoleLog"
-        |> Ports.Outgoing.stringBody model.field
-        |> Ports.Outgoing.send
-    , Ports.Outgoing.fromType_ "square"
-        |> Ports.Outgoing.intBody model.timesEnterWasPressed
-        |> Ports.Outgoing.send
-    ]
-        |> Cmd.batch
+                |> CmdUtil.withNone
 
 
 
@@ -136,9 +105,6 @@ view model =
     Layout.document
         "Gulp Elm Starter Project"
         [ title
-        , inputField model
-        , enterCount model
-        , squareOfCount model
         ]
 
 
@@ -149,49 +115,6 @@ title =
         [ Html.text "Elm Project : Go!" ]
 
 
-inputField : Model -> Html Msg
-inputField model =
-    Html.input
-        [ Attrs.value model.field
-        , Events.onInput FieldUpdated
-        , Attrs.placeholder "Press enter to console log msg"
-        , Attrs.spellcheck False
-        , HtmlUtil.onEnter EnterHappened
-        ]
-        []
-
-
-enterCount : Model -> Html Msg
-enterCount model =
-    Html.p
-        []
-        [ Html.text (enterText model) ]
-
-
-enterText : Model -> String
-enterText model =
-    [ "Enter was pressed"
-    , String.fromInt model.timesEnterWasPressed
-    , "times"
-    ]
-        |> String.join " "
-
-
-squareOfCount : Model -> Html Msg
-squareOfCount model =
-    Html.p
-        []
-        [ Html.text (squareText model) ]
-
-
-squareText : Model -> String
-squareText model =
-    [ "The square of the number of times enter was pressed is"
-    , String.fromInt model.squareOfEnterPresses
-    ]
-        |> String.join " "
-
-
 
 --------------------------------------------------------------------------------
 -- PORTS --
@@ -200,5 +123,4 @@ squareText model =
 
 incomingPortsListener : Ports.Incoming.Listener Msg
 incomingPortsListener =
-    Ports.Incoming.listen "square computed"
-        (Decode.map ReceivedSquare Decode.int)
+    Ports.Incoming.none

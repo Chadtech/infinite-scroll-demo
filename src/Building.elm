@@ -1,66 +1,112 @@
 module Building exposing
     ( Building
-    , dummy
+    , randomGenerator
     )
 
 import Random exposing (Seed)
 
 
 type alias Building =
-    { id : String
+    { id : Id
     , name : String
     }
 
 
-dummy : Seed -> ( List Building, Seed )
-dummy seed =
-    let
-        randInt : Random.Generator Int
-        randInt =
-            Random.int 0 9999999999
+type Id
+    = Id Int Int Int
 
-        fromIds : List String -> List Building
+
+randomGenerator : Random.Generator (List Building)
+randomGenerator =
+    let
+        names : List String
+        names =
+            [ "Gammage Auditorium"
+            , "State Theater"
+            , "The Nile Theater"
+            , "AT&T Long Lines"
+            , "Lincoln Center"
+            , "The Cloisters"
+            , "Stroud Mall"
+            , "Rockaway Mall"
+            , "Vollcorner"
+            , "Park Place"
+            , "Carpenters Training Center"
+            , "Solomon Art Gallery"
+            , "Impact Fun Zone"
+            , "Ace Hotel"
+            , "American Killer Bees"
+            , "Crucible Jiu Jitsu"
+            , "Yusan"
+            , "The Chrystler Building"
+            , "John Jay Park"
+            , "The Met"
+            , "Hasayampa"
+            , "Fiesta Mall"
+            , "Sun Ray Park"
+            , "Alter Torbogen"
+            , "Finanzamt München"
+            , "Weinerwald"
+            , "You Little"
+            , "Schloss Nymphenburg"
+            , "Steinheil 16"
+            , "The Guggenheim"
+            , "Hauptbahnhof"
+            , "Apex Arena"
+            , "Bank One Ballpark"
+            , "Sea World"
+            , "Rathaus"
+            , "The Clubhouse"
+            , "Rialto Theater"
+            , "Cornish Pasty"
+            , "LoFi Coffee"
+            , "Cartel Coffee"
+            , "Chuckbox"
+            , "Art Annex"
+            , "Discovery hall"
+            , "Earthlight"
+            , "Tempe Farmers Market"
+            , "Studio 710 Apartments"
+            , "Native New Yorker"
+            ]
+
+        fromIds : List Id -> List Building
         fromIds ids =
             let
-                make : String -> String -> Building
+                make : Id -> String -> Building
                 make id name =
                     { id = id, name = name }
             in
-            List.map2
-                make
-                ids
-                [ "Gammage Auditorium"
-                , "State Theater"
-                , "The Nile Theater"
-                , "AT&T Long Lines"
-                , "Lincoln Center"
-                , "The Cloisters"
-                , "Stroud Mall"
-                , "Rockaway Mall"
-                , "Vollcorner"
-                , "Park Place"
-                , "Carpenters Training Center"
-                , "Solomon Art Gallery"
-                , "Impact Fun Zone"
-                , "Ace Hotel"
-                , "American Killer Bees"
-                , "Crucible Jiu Jitsu"
-                , "Yusan"
-                , "The Chrystler Building"
-                , "John Jay Park"
-                , "The Met"
-                , "Hasayampa"
-                , "Fiesta Mall"
-                , "Sun Ray Park"
-                , "Alter Torbogen"
-                , "Finanzamt München"
-                , "Weinerwald"
-                , "You Little"
-                , "Schloss Nymphenburg"
-                , "Steinheil 16"
-                ]
+            List.map2 make ids names
     in
-    Random.step
-        (Random.list 20 (Random.map2 (\i j -> String.fromInt i ++ String.fromInt j) randInt randInt))
-        seed
-        |> Tuple.mapFirst fromIds
+    Random.list
+        (List.length names)
+        (Random.map3 Id anyInt anyInt anyInt)
+        |> Random.map fromIds
+        |> Random.andThen shuffle
+
+
+anyInt : Random.Generator Int
+anyInt =
+    Random.int Random.minInt Random.maxInt
+
+
+shuffle : List a -> Random.Generator (List a)
+shuffle list =
+    Random.map
+        (\independentSeed ->
+            list
+                |> List.foldl
+                    (\item ( acc, seed ) ->
+                        let
+                            ( tag, nextSeed ) =
+                                Random.step anyInt seed
+                        in
+                        ( ( item, tag ) :: acc, nextSeed )
+                    )
+                    ( [], independentSeed )
+                |> Tuple.first
+                |> List.sortBy Tuple.second
+                |> List.map Tuple.first
+        )
+        Random.independentSeed

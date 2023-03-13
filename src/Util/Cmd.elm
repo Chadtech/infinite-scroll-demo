@@ -1,11 +1,11 @@
 module Util.Cmd exposing
     ( mapBoth
-    , withNoCmd
+    , withNone
     )
 
 
-withNoCmd : model -> ( model, Cmd msg )
-withNoCmd model =
+withNone : model -> ( model, Cmd msg )
+withNone model =
     ( model, Cmd.none )
 
 
