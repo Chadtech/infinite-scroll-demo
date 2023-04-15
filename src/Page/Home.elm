@@ -31,15 +31,19 @@ import Util.Cmd as CmdUtil
 type alias Model =
     { session : Session
     , buildings : List Building
+    , viewUpTo : Int
     }
 
 
 type Msg
-    = Scrolled ScrollEvent
+    = ScrolledToBottom
 
 
 type alias ScrollEvent =
-    {}
+    { scrollHeight : Float
+    , scrollTop : Float
+    , elemHeight : Float
+    }
 
 
 
@@ -69,7 +73,19 @@ init session =
     in
     { session = session
     , buildings = manyBuildings seed 10
+    , viewUpTo = pageSize
     }
+
+
+
+--------------------------------------------------------------------------------
+-- HELPERS --
+--------------------------------------------------------------------------------
+
+
+pageSize : Int
+pageSize =
+    40
 
 
 
@@ -92,8 +108,8 @@ getSession model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Scrolled scrollEvent ->
-            model
+        ScrolledToBottom ->
+            { model | viewUpTo = model.viewUpTo + pageSize }
                 |> CmdUtil.withNone
 
 
@@ -125,9 +141,32 @@ view model =
 scrollContainer : Model -> Html Msg
 scrollContainer model =
     let
-        scrollDecoder : Decoder ScrollEvent
+        scrollDecoder : Decoder Msg
         scrollDecoder =
-            JD.succeed {}
+            let
+                eventDecoder : Decoder ScrollEvent
+                eventDecoder =
+                    JD.map3 ScrollEvent
+                        (JD.field "scrollHeight" JD.float)
+                        (JD.field "scrollTop" JD.float)
+                        (JD.field "offsetHeight" JD.float)
+                        |> JD.field "target"
+
+                isCloseToBottom : ScrollEvent -> Decoder Msg
+                isCloseToBottom event =
+                    let
+                        distanceToBottom : Float
+                        distanceToBottom =
+                            event.scrollHeight - (event.scrollTop + event.elemHeight)
+                    in
+                    if distanceToBottom < 700 then
+                        JD.succeed ScrolledToBottom
+
+                    else
+                        JD.fail "Above scroll-to-bottom threshold"
+            in
+            eventDecoder
+                |> JD.andThen isCloseToBottom
     in
     Html.div
         [ Attr.css
@@ -137,9 +176,11 @@ scrollContainer model =
             , S.bgBackground1
             , S.scroll
             ]
-        , Ev.on "scroll" (JD.map Scrolled scrollDecoder)
+        , Ev.on "scroll" scrollDecoder
         ]
-        (List.indexedMap buildingRow model.buildings)
+        (List.indexedMap buildingRow <|
+            List.take model.viewUpTo model.buildings
+        )
 
 
 buildingRow : Int -> Building -> Html msg
