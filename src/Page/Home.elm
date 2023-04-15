@@ -193,6 +193,10 @@ buildingRow index building =
 
             else
                 S.none
+
+        color : Css.Color
+        color =
+            Css.hex <| Building.color building
     in
     Html.div
         [ Attr.css
@@ -205,7 +209,7 @@ buildingRow index building =
         [ Html.div
             [ Attr.css
                 [ S.indent
-                , Css.backgroundColor <| Css.hex <| Building.color building
+                , Css.backgroundColor color
                 , S.w 5
                 , S.h 5
                 ]
