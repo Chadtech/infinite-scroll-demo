@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import Html.Styled as Html exposing (Html)
 import Json.Decode as Decode exposing (Decoder)
 import Layout exposing (Document)
-import Page.Home as Home
+import Page.Step1 as Step1
 import Ports.Incoming
 import Route exposing (Route)
 import Session exposing (Session)
@@ -39,14 +39,14 @@ main =
 
 type Model
     = PageNotFound Session
-    | Home Home.Model
+    | Step1 Step1.Model
 
 
 type Msg
     = MsgDecodeFailed Ports.Incoming.Error
     | UrlRequested UrlRequest
     | RouteChanged (Maybe Route)
-    | HomeMsg Home.Msg
+    | HomeMsg Step1.Msg
 
 
 
@@ -78,8 +78,8 @@ getSession model =
         PageNotFound session ->
             session
 
-        Home subModel ->
-            Home.getSession subModel
+        Step1 subModel ->
+            Step1.getSession subModel
 
 
 
@@ -104,9 +104,9 @@ update msg model =
 
         HomeMsg subMsg ->
             case model of
-                Home subModel ->
-                    Home.update subMsg subModel
-                        |> CmdUtil.mapBoth Home HomeMsg
+                Step1 subModel ->
+                    Step1.update subMsg subModel
+                        |> CmdUtil.mapBoth Step1 HomeMsg
 
                 _ ->
                     ( model, Cmd.none )
@@ -126,9 +126,20 @@ handleRouteChange maybeRoute model =
         Just route ->
             case route of
                 Route.Landing ->
-                    ( Home <| Home.init session
-                    , Cmd.none
-                    )
+                    Step1.init session
+                        |> Step1
+                        |> CmdUtil.withNone
+
+                Route.Step step ->
+                    case step of
+                        1 ->
+                            Step1.init session
+                                |> Step1
+                                |> CmdUtil.withNone
+
+                        _ ->
+                            PageNotFound session
+                                |> CmdUtil.withNone
 
 
 
@@ -145,8 +156,8 @@ view model =
                 "Page not found"
                 [ Html.text "Page not found!" ]
 
-        Home subModel ->
-            Home.view subModel
+        Step1 subModel ->
+            Step1.view subModel
                 |> Layout.map HomeMsg
 
 
@@ -169,5 +180,5 @@ incomingPortsListeners model =
         PageNotFound _ ->
             Ports.Incoming.none
 
-        Home _ ->
-            Ports.Incoming.map HomeMsg Home.incomingPortsListener
+        Step1 _ ->
+            Ports.Incoming.map HomeMsg Step1.incomingPortsListener

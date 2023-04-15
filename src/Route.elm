@@ -4,7 +4,7 @@ module Route exposing
     )
 
 import Url exposing (Url)
-import Url.Parser as P exposing (Parser)
+import Url.Parser as P exposing ((</>), Parser)
 
 
 
@@ -15,6 +15,7 @@ import Url.Parser as P exposing (Parser)
 
 type Route
     = Landing
+    | Step Int
 
 
 
@@ -36,5 +37,7 @@ fromUrl =
 
 parser : Parser (Route -> a) a
 parser =
-    [ P.map Landing P.top ]
+    [ P.map Landing P.top
+    , P.map Step (P.top </> P.int)
+    ]
         |> P.oneOf

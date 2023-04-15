@@ -1,4 +1,4 @@
-module Page.Home exposing
+module Page.Step1 exposing
     ( Model
     , Msg
     , getSession
