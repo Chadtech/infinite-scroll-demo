@@ -12,6 +12,8 @@ import Building exposing (Building)
 import Css
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attr
+import Html.Styled.Events as Ev
+import Json.Decode as JD exposing (Decoder)
 import Layout exposing (Document)
 import Ports.Incoming
 import Random
@@ -33,7 +35,11 @@ type alias Model =
 
 
 type Msg
-    = Msg
+    = Scrolled ScrollEvent
+
+
+type alias ScrollEvent =
+    {}
 
 
 
@@ -86,7 +92,7 @@ getSession model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Msg ->
+        Scrolled scrollEvent ->
             model
                 |> CmdUtil.withNone
 
@@ -116,8 +122,13 @@ view model =
         ]
 
 
-scrollContainer : Model -> Html msg
+scrollContainer : Model -> Html Msg
 scrollContainer model =
+    let
+        scrollDecoder : Decoder ScrollEvent
+        scrollDecoder =
+            JD.succeed {}
+    in
     Html.div
         [ Attr.css
             [ S.indent
@@ -126,6 +137,7 @@ scrollContainer model =
             , S.bgBackground1
             , S.scroll
             ]
+        , Ev.on "scroll" (JD.map Scrolled scrollDecoder)
         ]
         (List.indexedMap buildingRow model.buildings)
 
