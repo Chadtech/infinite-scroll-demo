@@ -6,6 +6,7 @@ import Html.Styled as Html exposing (Html)
 import Json.Decode as Decode exposing (Decoder)
 import Layout exposing (Document)
 import Page.Step1 as Step1
+import Page.Step2 as Step2
 import Ports.Incoming
 import Route exposing (Route)
 import Session exposing (Session)
@@ -40,13 +41,15 @@ main =
 type Model
     = PageNotFound Session
     | Step1 Step1.Model
+    | Step2 Step2.Model
 
 
 type Msg
     = MsgDecodeFailed Ports.Incoming.Error
     | UrlRequested UrlRequest
     | RouteChanged (Maybe Route)
-    | HomeMsg Step1.Msg
+    | Step1Msg Step1.Msg
+    | Step2Msg Step2.Msg
 
 
 
@@ -81,6 +84,9 @@ getSession model =
         Step1 subModel ->
             Step1.getSession subModel
 
+        Step2 subModel ->
+            Step2.getSession subModel
+
 
 
 --------------------------------------------------------------------------------
@@ -96,17 +102,33 @@ update msg model =
                 |> CmdUtil.withNone
 
         UrlRequested urlRequest ->
-            model
-                |> CmdUtil.withNone
+            case urlRequest of
+                Browser.Internal url ->
+                    Tuple.pair
+                        model
+                        (Session.pushUrl (getSession model) url)
+
+                Browser.External string ->
+                    model
+                        |> CmdUtil.withNone
 
         RouteChanged maybeRoute ->
             handleRouteChange maybeRoute model
 
-        HomeMsg subMsg ->
+        Step1Msg subMsg ->
             case model of
                 Step1 subModel ->
                     Step1.update subMsg subModel
-                        |> CmdUtil.mapBoth Step1 HomeMsg
+                        |> CmdUtil.mapBoth Step1 Step1Msg
+
+                _ ->
+                    ( model, Cmd.none )
+
+        Step2Msg subMsg ->
+            case model of
+                Step1 subModel ->
+                    Step2.update subMsg subModel
+                        |> CmdUtil.mapBoth Step2 Step2Msg
 
                 _ ->
                     ( model, Cmd.none )
@@ -137,6 +159,11 @@ handleRouteChange maybeRoute model =
                                 |> Step1
                                 |> CmdUtil.withNone
 
+                        2 ->
+                            Step2.init session
+                                |> Step2
+                                |> CmdUtil.withNone
+
                         _ ->
                             PageNotFound session
                                 |> CmdUtil.withNone
@@ -158,7 +185,11 @@ view model =
 
         Step1 subModel ->
             Step1.view subModel
-                |> Layout.map HomeMsg
+                |> Layout.map Step1Msg
+
+        Step2 subModel ->
+            Step2.view subModel
+                |> Layout.map Step2Msg
 
 
 
@@ -181,4 +212,7 @@ incomingPortsListeners model =
             Ports.Incoming.none
 
         Step1 _ ->
-            Ports.Incoming.map HomeMsg Step1.incomingPortsListener
+            Ports.Incoming.map Step1Msg Step1.incomingPortsListener
+
+        Step2 _ ->
+            Ports.Incoming.map Step2Msg Step2.incomingPortsListener

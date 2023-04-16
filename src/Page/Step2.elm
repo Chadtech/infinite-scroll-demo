@@ -1,4 +1,4 @@
-module Page.Step1 exposing
+module Page.Step2 exposing
     ( Model
     , Msg
     , getSession
@@ -16,10 +16,12 @@ import Html.Styled.Events as Ev
 import Json.Decode as JD exposing (Decoder)
 import Layout exposing (Document)
 import Ports.Incoming
+import Process
 import Random
 import Route
 import Session exposing (Session)
 import Style as S
+import Task
 import Util.Cmd as CmdUtil
 import View.Button as Button
 
@@ -137,11 +139,14 @@ view model =
                 [ Attr.css
                     [ S.flex
                     , S.w 10
-                    , S.justifyEnd
+                    , S.spaceBetween
                     ]
                 ]
-                [ Button.simple "Step 2"
-                    |> Button.asLink (Route.step 2)
+                [ Button.simple "Step 1"
+                    |> Button.asLink (Route.step 1)
+                    |> Button.toHtml
+                , Button.simple "Step 3"
+                    |> Button.asLink (Route.step 3)
                     |> Button.toHtml
                 ]
             ]

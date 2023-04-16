@@ -1,4 +1,4 @@
-module Style exposing (bgBackground1, bgBackground2, flex, flexCol, fontSize, g, globals, h, hFull, indent, justifyCenter, m, mt, none, p, scroll, w)
+module Style exposing (bgBackground1, bgBackground2, column, flex, fontSize, g, globals, h, hFull, importantIndent, importantOutdent, indent, justifyCenter, justifyEnd, m, mb, mt, none, outdent, p, scroll, spaceBetween, w)
 
 import Chadtech.Colors as Ct
 import Css exposing (Style)
@@ -107,13 +107,18 @@ mt =
     Css.marginTop << px
 
 
+mb : Int -> Style
+mb =
+    Css.marginBottom << px
+
+
 flex : Style
 flex =
     Css.displayFlex
 
 
-flexCol : Style
-flexCol =
+column : Style
+column =
     Css.batch
         [ flex, Css.flexDirection Css.column ]
 
@@ -121,6 +126,16 @@ flexCol =
 justifyCenter : Style
 justifyCenter =
     Css.justifyContent Css.center
+
+
+spaceBetween : Style
+spaceBetween =
+    Css.justifyContent Css.spaceBetween
+
+
+justifyEnd : Style
+justifyEnd =
+    Css.justifyContent Css.flexEnd
 
 
 bgBackground1 : Style
@@ -144,6 +159,36 @@ indent =
     , Css.borderTop3 (px 1) Css.solid Ct.content0
     , Css.borderRight3 (px 1) Css.solid Ct.content2
     , Css.borderBottom3 (px 1) Css.solid Ct.content2
+    ]
+        |> Css.batch
+
+
+outdent : Css.Style
+outdent =
+    [ Css.borderLeft3 (px 1) Css.solid Ct.content2
+    , Css.borderTop3 (px 1) Css.solid Ct.content2
+    , Css.borderRight3 (px 1) Css.solid Ct.content0
+    , Css.borderBottom3 (px 1) Css.solid Ct.content0
+    ]
+        |> Css.batch
+
+
+importantOutdent : Css.Style
+importantOutdent =
+    [ Css.borderLeft3 (px 1) Css.solid Ct.important2
+    , Css.borderTop3 (px 1) Css.solid Ct.important2
+    , Css.borderRight3 (px 1) Css.solid Ct.important0
+    , Css.borderBottom3 (px 1) Css.solid Ct.important0
+    ]
+        |> Css.batch
+
+
+importantIndent : Css.Style
+importantIndent =
+    [ Css.borderLeft3 (px 1) Css.solid Ct.important0
+    , Css.borderTop3 (px 1) Css.solid Ct.important0
+    , Css.borderRight3 (px 1) Css.solid Ct.important2
+    , Css.borderBottom3 (px 1) Css.solid Ct.important2
     ]
         |> Css.batch
 

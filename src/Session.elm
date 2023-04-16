@@ -1,9 +1,11 @@
 module Session exposing
     ( Session
     , init
+    , pushUrl
     )
 
 import Browser.Navigation as Nav
+import Url exposing (Url)
 
 
 
@@ -25,3 +27,14 @@ type alias Session =
 init : Nav.Key -> Session
 init navKey =
     { navKey = navKey }
+
+
+
+---------------------------------------------------------------
+-- API --
+---------------------------------------------------------------
+
+
+pushUrl : Session -> Url -> Cmd msg
+pushUrl session url =
+    Nav.pushUrl session.navKey (Url.toString url)
