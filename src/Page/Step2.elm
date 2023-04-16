@@ -16,13 +16,11 @@ import Html.Styled.Events as Ev
 import Json.Decode as JD exposing (Decoder)
 import Layout exposing (Document)
 import Ports.Incoming
-import Process
-import Random
 import Route
 import Session exposing (Session)
 import Style as S
-import Task
 import Util.Cmd as CmdUtil
+import Util.Demo as Demo exposing (buildings)
 import View.Button as Button
 
 
@@ -35,12 +33,13 @@ import View.Button as Button
 type alias Model =
     { session : Session
     , buildings : List Building
-    , viewUpTo : Int
+    , loadingMore : Bool
     }
 
 
 type Msg
     = ScrolledToBottom
+    | GotBuildings (Result Never (List Building))
 
 
 type alias ScrollEvent =
@@ -56,29 +55,23 @@ type alias ScrollEvent =
 --------------------------------------------------------------------------------
 
 
-init : Session -> Model
+init : Session -> ( Model, Cmd Msg )
 init session =
     let
-        seed : Random.Seed
-        seed =
-            Random.initialSeed 2324
-
-        manyBuildings : Random.Seed -> Int -> List Building
-        manyBuildings seed0 howManyLists =
-            if howManyLists > 0 then
-                let
-                    ( nextBuildings, seed1 ) =
-                        Random.step Building.randomGenerator seed0
-                in
-                nextBuildings ++ manyBuildings seed1 (howManyLists - 1)
-
-            else
-                []
+        model : Model
+        model =
+            { session = session
+            , buildings = []
+            , loadingMore = True
+            }
     in
-    { session = session
-    , buildings = manyBuildings seed 10
-    , viewUpTo = pageSize
-    }
+    ( model
+    , Demo.getBuildings
+        { from = 0
+        , len = pageSize
+        }
+        GotBuildings
+    )
 
 
 
@@ -113,8 +106,32 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ScrolledToBottom ->
-            { model | viewUpTo = model.viewUpTo + pageSize }
-                |> CmdUtil.withNone
+            if model.loadingMore then
+                model
+                    |> CmdUtil.withNone
+
+            else
+                Tuple.pair
+                    { model | loadingMore = True }
+                    (Demo.getBuildings
+                        { from = List.length model.buildings
+                        , len = pageSize
+                        }
+                        GotBuildings
+                    )
+
+        GotBuildings result ->
+            case result of
+                Ok moreBuildings ->
+                    { model
+                        | buildings = model.buildings ++ moreBuildings
+                        , loadingMore = False
+                    }
+                        |> CmdUtil.withNone
+
+                Err _ ->
+                    model
+                        |> CmdUtil.withNone
 
 
 
@@ -194,6 +211,14 @@ scrollContainer model =
             in
             eventDecoder
                 |> JD.andThen isCloseToBottom
+
+        body : List (Html msg)
+        body =
+            if List.isEmpty model.buildings then
+                loading
+
+            else
+                List.indexedMap buildingRow model.buildings ++ loading
     in
     Html.div
         [ Attr.css
@@ -205,9 +230,21 @@ scrollContainer model =
             ]
         , Ev.on "scroll" scrollDecoder
         ]
-        (List.indexedMap buildingRow <|
-            List.take model.viewUpTo model.buildings
-        )
+        body
+
+
+loading : List (Html msg)
+loading =
+    [ Html.div
+        [ Attr.css
+            [ S.flex
+            , S.justifyCenter
+            , S.p 6
+            ]
+        ]
+        [ Html.text "Loading.."
+        ]
+    ]
 
 
 buildingRow : Int -> Building -> Html msg

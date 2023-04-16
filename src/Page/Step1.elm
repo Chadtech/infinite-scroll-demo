@@ -16,11 +16,11 @@ import Html.Styled.Events as Ev
 import Json.Decode as JD exposing (Decoder)
 import Layout exposing (Document)
 import Ports.Incoming
-import Random
 import Route
 import Session exposing (Session)
 import Style as S
 import Util.Cmd as CmdUtil
+import Util.Demo exposing (buildings)
 import View.Button as Button
 
 
@@ -56,25 +56,8 @@ type alias ScrollEvent =
 
 init : Session -> Model
 init session =
-    let
-        seed : Random.Seed
-        seed =
-            Random.initialSeed 2324
-
-        manyBuildings : Random.Seed -> Int -> List Building
-        manyBuildings seed0 howManyLists =
-            if howManyLists > 0 then
-                let
-                    ( nextBuildings, seed1 ) =
-                        Random.step Building.randomGenerator seed0
-                in
-                nextBuildings ++ manyBuildings seed1 (howManyLists - 1)
-
-            else
-                []
-    in
     { session = session
-    , buildings = manyBuildings seed 10
+    , buildings = buildings
     , viewUpTo = pageSize
     }
 
@@ -107,12 +90,11 @@ getSession model =
 --------------------------------------------------------------------------------
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> Model
 update msg model =
     case msg of
         ScrolledToBottom ->
             { model | viewUpTo = model.viewUpTo + pageSize }
-                |> CmdUtil.withNone
 
 
 

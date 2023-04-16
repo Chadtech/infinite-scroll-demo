@@ -119,14 +119,15 @@ update msg model =
             case model of
                 Step1 subModel ->
                     Step1.update subMsg subModel
-                        |> CmdUtil.mapBoth Step1 Step1Msg
+                        |> Step1
+                        |> CmdUtil.withNone
 
                 _ ->
                     ( model, Cmd.none )
 
         Step2Msg subMsg ->
             case model of
-                Step1 subModel ->
+                Step2 subModel ->
                     Step2.update subMsg subModel
                         |> CmdUtil.mapBoth Step2 Step2Msg
 
@@ -161,8 +162,8 @@ handleRouteChange maybeRoute model =
 
                         2 ->
                             Step2.init session
-                                |> Step2
-                                |> CmdUtil.withNone
+                                |> CmdUtil.mapBoth Step2 Step2Msg
+                                |> Debug.log "STEP 2 init"
 
                         _ ->
                             PageNotFound session
