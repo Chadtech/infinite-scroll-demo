@@ -1,4 +1,4 @@
-module Page.Step2 exposing
+module Page.Step3 exposing
     ( Model
     , Msg
     , getSession
@@ -33,6 +33,7 @@ import View.Button as Button
 type alias Model =
     { session : Session
     , buildings : List Building
+    , renderFrom : Int
     , loadingMore : Bool
     }
 
@@ -62,6 +63,7 @@ init session =
         model =
             { session = session
             , buildings = []
+            , renderFrom = 0
             , loadingMore = True
             }
     in
@@ -126,6 +128,7 @@ update msg model =
                     { model
                         | buildings = model.buildings ++ moreBuildings
                         , loadingMore = False
+                        , renderFrom = model.renderFrom + pageSize
                     }
                         |> CmdUtil.withNone
 

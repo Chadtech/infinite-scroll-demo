@@ -7,6 +7,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Layout exposing (Document)
 import Page.Step1 as Step1
 import Page.Step2 as Step2
+import Page.Step3 as Step3
 import Ports.Incoming
 import Route exposing (Route)
 import Session exposing (Session)
@@ -42,6 +43,7 @@ type Model
     = PageNotFound Session
     | Step1 Step1.Model
     | Step2 Step2.Model
+    | Step3 Step3.Model
 
 
 type Msg
@@ -50,6 +52,7 @@ type Msg
     | RouteChanged (Maybe Route)
     | Step1Msg Step1.Msg
     | Step2Msg Step2.Msg
+    | Step3Msg Step3.Msg
 
 
 
@@ -86,6 +89,9 @@ getSession model =
 
         Step2 subModel ->
             Step2.getSession subModel
+
+        Step3 subModel ->
+            Step3.getSession subModel
 
 
 
@@ -134,6 +140,15 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        Step3Msg subMsg ->
+            case model of
+                Step3 subModel ->
+                    Step3.update subMsg subModel
+                        |> CmdUtil.mapBoth Step3 Step3Msg
+
+                _ ->
+                    ( model, Cmd.none )
+
 
 handleRouteChange : Maybe Route -> Model -> ( Model, Cmd Msg )
 handleRouteChange maybeRoute model =
@@ -163,7 +178,10 @@ handleRouteChange maybeRoute model =
                         2 ->
                             Step2.init session
                                 |> CmdUtil.mapBoth Step2 Step2Msg
-                                |> Debug.log "STEP 2 init"
+
+                        3 ->
+                            Step3.init session
+                                |> CmdUtil.mapBoth Step3 Step3Msg
 
                         _ ->
                             PageNotFound session
@@ -192,6 +210,10 @@ view model =
             Step2.view subModel
                 |> Layout.map Step2Msg
 
+        Step3 subModel ->
+            Step3.view subModel
+                |> Layout.map Step3Msg
+
 
 
 --------------------------------------------------------------------------------
@@ -217,3 +239,6 @@ incomingPortsListeners model =
 
         Step2 _ ->
             Ports.Incoming.map Step2Msg Step2.incomingPortsListener
+
+        Step3 _ ->
+            Ports.Incoming.map Step3Msg Step3.incomingPortsListener
