@@ -8,6 +8,7 @@ module Page.Step3 exposing
     , view
     )
 
+import Browser.Dom
 import Building exposing (Building)
 import Css
 import Html.Styled as Html exposing (Html)
@@ -19,6 +20,7 @@ import Ports.Incoming
 import Route
 import Session exposing (Session)
 import Style as S
+import Task
 import Util.Cmd as CmdUtil
 import Util.Demo as Demo
 import View.Button as Button
@@ -41,6 +43,7 @@ type alias Model =
 type Msg
     = ScrolledToBottom
     | GotBuildings (Result Never (List Building))
+    | SetScroll (Result Browser.Dom.Error ())
 
 
 type alias ScrollEvent =
@@ -125,16 +128,26 @@ update msg model =
         GotBuildings result ->
             case result of
                 Ok moreBuildings ->
-                    { model
-                        | buildings = model.buildings ++ moreBuildings
-                        , loadingMore = False
-                        , renderFrom = model.renderFrom + pageSize
-                    }
-                        |> CmdUtil.withNone
+                    Tuple.pair
+                        { model
+                            | buildings = model.buildings ++ moreBuildings
+                            , loadingMore = False
+                            , renderFrom = model.renderFrom + (pageSize // 2)
+                        }
+                        (Browser.Dom.setViewportOf
+                            scrollContainerId
+                            10
+                            0
+                            |> Task.attempt SetScroll
+                        )
 
                 Err _ ->
                     model
                         |> CmdUtil.withNone
+
+        SetScroll _ ->
+            model
+                |> CmdUtil.withNone
 
 
 
@@ -162,11 +175,11 @@ view model =
                     , S.spaceBetween
                     ]
                 ]
-                [ Button.simple "Step 1"
-                    |> Button.asLink (Route.step 1)
+                [ Button.simple "Step 2"
+                    |> Button.asLink (Route.step 2)
                     |> Button.toHtml
-                , Button.simple "Step 3"
-                    |> Button.asLink (Route.step 3)
+                , Button.simple "Step 4"
+                    |> Button.asLink (Route.step 4)
                     |> Button.toHtml
                 ]
             ]
@@ -183,6 +196,11 @@ view model =
             [ scrollContainer model
             ]
         ]
+
+
+scrollContainerId : String
+scrollContainerId =
+    "scroll-container"
 
 
 scrollContainer : Model -> Html Msg
@@ -232,6 +250,7 @@ scrollContainer model =
             , S.scroll
             ]
         , Ev.on "scroll" scrollDecoder
+        , Attr.id scrollContainerId
         ]
         body
 
