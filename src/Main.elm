@@ -230,15 +230,4 @@ subscriptions model =
 
 incomingPortsListeners : Model -> Ports.Incoming.Listener Msg
 incomingPortsListeners model =
-    case model of
-        PageNotFound _ ->
-            Ports.Incoming.none
-
-        Step1 _ ->
-            Ports.Incoming.map Step1Msg Step1.incomingPortsListener
-
-        Step2 _ ->
-            Ports.Incoming.map Step2Msg Step2.incomingPortsListener
-
-        Step3 _ ->
-            Ports.Incoming.map Step3Msg Step3.incomingPortsListener
+    Ports.Incoming.none

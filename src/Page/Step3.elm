@@ -2,7 +2,6 @@ module Page.Step3 exposing
     ( Model
     , Msg
     , getSession
-    , incomingPortsListener
     , init
     , update
     , view
@@ -16,7 +15,6 @@ import Html.Styled.Attributes as Attr
 import Html.Styled.Events as Ev
 import Json.Decode as JD exposing (Decoder)
 import Layout exposing (Document)
-import Ports.Incoming
 import Route
 import Session exposing (Session)
 import Style as S
@@ -252,14 +250,10 @@ view model =
                 [ Attr.css
                     [ S.flex
                     , S.w 10
-                    , S.spaceBetween
                     ]
                 ]
                 [ Button.simple "Step 2"
                     |> Button.asLink (Route.step 2)
-                    |> Button.toHtml
-                , Button.simple "Step 4"
-                    |> Button.asLink (Route.step 4)
                     |> Button.toHtml
                 ]
             ]
@@ -397,14 +391,3 @@ title =
             ]
         ]
         [ Html.text "Infinite Scroll Demo" ]
-
-
-
---------------------------------------------------------------------------------
--- PORTS --
---------------------------------------------------------------------------------
-
-
-incomingPortsListener : Ports.Incoming.Listener Msg
-incomingPortsListener =
-    Ports.Incoming.none
