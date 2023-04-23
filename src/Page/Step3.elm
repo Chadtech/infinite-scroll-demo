@@ -37,11 +37,12 @@ type alias Model =
     , buildings : List Building
     , renderFrom : Int
     , loadingMore : Bool
+    , scrollPosition : Float
     }
 
 
 type Msg
-    = ScrolledToBottom
+    = Scrolled ScrollEvent
     | GotBuildings (Result Never (List Building))
     | SetScroll (Result Browser.Dom.Error ())
 
@@ -68,6 +69,7 @@ init session =
             , buildings = []
             , renderFrom = 0
             , loadingMore = True
+            , scrollPosition = 0
             }
     in
     ( model
@@ -110,14 +112,23 @@ getSession model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ScrolledToBottom ->
-            if model.loadingMore then
-                model
+        Scrolled event ->
+            let
+                distanceToBottom : Float
+                distanceToBottom =
+                    event.scrollHeight - (event.scrollTop + event.elemHeight)
+
+                modelWithScrollPos : Model
+                modelWithScrollPos =
+                    { model | scrollPosition = event.scrollTop }
+            in
+            if model.loadingMore || distanceToBottom > 700 then
+                modelWithScrollPos
                     |> CmdUtil.withNone
 
             else
                 Tuple.pair
-                    { model | loadingMore = True }
+                    { modelWithScrollPos | loadingMore = True }
                     (Demo.getBuildings
                         { from = List.length model.buildings
                         , len = pageSize
@@ -216,22 +227,9 @@ scrollContainer model =
                         (JD.field "scrollTop" JD.float)
                         (JD.field "offsetHeight" JD.float)
                         |> JD.field "target"
-
-                isCloseToBottom : ScrollEvent -> Decoder Msg
-                isCloseToBottom event =
-                    let
-                        distanceToBottom : Float
-                        distanceToBottom =
-                            event.scrollHeight - (event.scrollTop + event.elemHeight)
-                    in
-                    if distanceToBottom < 700 then
-                        JD.succeed ScrolledToBottom
-
-                    else
-                        JD.fail "Above scroll-to-bottom threshold"
             in
             eventDecoder
-                |> JD.andThen isCloseToBottom
+                |> JD.map Scrolled
 
         body : List (Html msg)
         body =
