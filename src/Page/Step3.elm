@@ -44,6 +44,7 @@ type alias Model =
 type Msg
     = Scrolled ScrollEvent
     | GotBuildings (Result Never (List Building))
+    | GotFirstBuildings (Result Never (List Building))
     | SetScroll (Result Browser.Dom.Error ())
 
 
@@ -92,6 +93,37 @@ pageSize =
     40
 
 
+handleScroll : ScrollEvent -> Model -> ( Model, Cmd Msg )
+handleScroll event model =
+    let
+        distanceToBottom : Float
+        distanceToBottom =
+            event.scrollHeight - (event.scrollTop + event.elemHeight)
+    in
+    if model.loadingMore || distanceToBottom > 512 then
+        model
+            |> CmdUtil.withNone
+
+    else
+        --if halfPageSize > List.length model.buildings - model.renderFrom then
+        Tuple.pair
+            { model | loadingMore = True }
+            (Demo.getBuildings
+                { from = List.length model.buildings
+                , len = pageSize
+                }
+                GotBuildings
+            )
+
+
+acceptBuildings : List Building -> Model -> Model
+acceptBuildings buildings model =
+    { model
+        | buildings = model.buildings ++ buildings
+        , loadingMore = False
+    }
+
+
 
 --------------------------------------------------------------------------------
 -- API --
@@ -113,42 +145,30 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Scrolled event ->
-            let
-                distanceToBottom : Float
-                distanceToBottom =
-                    event.scrollHeight - (event.scrollTop + event.elemHeight)
-
-                modelWithScrollPos : Model
-                modelWithScrollPos =
-                    { model | scrollPosition = event.scrollTop }
-            in
-            if model.loadingMore || distanceToBottom > 700 then
-                modelWithScrollPos
-                    |> CmdUtil.withNone
-
-            else
-                Tuple.pair
-                    { modelWithScrollPos | loadingMore = True }
-                    (Demo.getBuildings
-                        { from = List.length model.buildings
-                        , len = pageSize
-                        }
-                        GotBuildings
-                    )
+            handleScroll event { model | scrollPosition = event.scrollTop }
 
         GotBuildings result ->
             case result of
                 Ok moreBuildings ->
+                    let
+                        halfPageSize : Int
+                        halfPageSize =
+                            pageSize // 2
+
+                        scrollAdjustment : Float
+                        scrollAdjustment =
+                            toFloat halfPageSize * 64
+                    in
                     Tuple.pair
                         { model
                             | buildings = model.buildings ++ moreBuildings
                             , loadingMore = False
-                            , renderFrom = model.renderFrom + (pageSize // 2)
+                            , renderFrom = model.renderFrom + halfPageSize
                         }
                         (Browser.Dom.setViewportOf
                             scrollContainerId
-                            10
                             0
+                            (model.scrollPosition - scrollAdjustment)
                             |> Task.attempt SetScroll
                         )
 
@@ -159,6 +179,16 @@ update msg model =
         SetScroll _ ->
             model
                 |> CmdUtil.withNone
+
+        GotFirstBuildings result ->
+            case result of
+                Ok buildings ->
+                    acceptBuildings buildings model
+                        |> CmdUtil.withNone
+
+                Err error ->
+                    model
+                        |> CmdUtil.withNone
 
 
 
@@ -237,7 +267,12 @@ scrollContainer model =
                 loading
 
             else
-                List.indexedMap buildingRow model.buildings ++ loading
+                (model.buildings
+                    |> List.indexedMap Tuple.pair
+                    |> List.drop model.renderFrom
+                    |> List.map buildingRow
+                )
+                    ++ loading
     in
     Html.div
         [ Attr.css
@@ -267,8 +302,8 @@ loading =
     ]
 
 
-buildingRow : Int -> Building -> Html msg
-buildingRow index building =
+buildingRow : ( Int, Building ) -> Html msg
+buildingRow ( index, building ) =
     let
         bgColor : Css.Style
         bgColor =
@@ -281,6 +316,10 @@ buildingRow index building =
         color : Css.Color
         color =
             Css.hex <| Building.color building
+
+        label : String
+        label =
+            building.name ++ " - " ++ String.fromInt index
     in
     Html.div
         [ Attr.css
@@ -305,7 +344,7 @@ buildingRow index building =
                 , S.justifyCenter
                 ]
             ]
-            [ Html.text building.name ]
+            [ Html.text label ]
         ]
 
 
