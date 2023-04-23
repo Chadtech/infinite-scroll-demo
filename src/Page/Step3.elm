@@ -78,7 +78,7 @@ init session =
         { from = 0
         , len = pageSize
         }
-        GotBuildings
+        GotFirstBuildings
     )
 
 
@@ -90,7 +90,29 @@ init session =
 
 pageSize : Int
 pageSize =
-    40
+    64
+
+
+halfPageSize : Int
+halfPageSize =
+    pageSize // 2
+
+
+bufferDistance : Float
+bufferDistance =
+    512
+
+
+scrollAdjustment : Float
+scrollAdjustment =
+    toFloat halfPageSize * 64
+
+
+incrRenderFrom : Model -> Model
+incrRenderFrom model =
+    { model
+        | renderFrom = model.renderFrom + halfPageSize
+    }
 
 
 handleScroll : ScrollEvent -> Model -> ( Model, Cmd Msg )
@@ -100,19 +122,43 @@ handleScroll event model =
         distanceToBottom =
             event.scrollHeight - (event.scrollTop + event.elemHeight)
     in
-    if model.loadingMore || distanceToBottom > 512 then
-        model
-            |> CmdUtil.withNone
+    if model.loadingMore || distanceToBottom > bufferDistance then
+        let
+            distanceToTop : Float
+            distanceToTop =
+                event.scrollTop
+        in
+        if distanceToTop < bufferDistance && model.renderFrom > 0 then
+            ( { model | renderFrom = max 0 (model.renderFrom - halfPageSize) }
+            , adjustScroll model -scrollAdjustment
+            )
+
+        else
+            model
+                |> CmdUtil.withNone
 
     else
-        --if halfPageSize > List.length model.buildings - model.renderFrom then
-        Tuple.pair
-            { model | loadingMore = True }
-            (Demo.getBuildings
+        let
+            amountWeNeed : Int
+            amountWeNeed =
+                model.renderFrom + (2 * pageSize)
+
+            amountWeHave : Int
+            amountWeHave =
+                List.length model.buildings
+        in
+        if amountWeNeed > amountWeHave then
+            ( { model | loadingMore = True }
+            , Demo.getBuildings
                 { from = List.length model.buildings
                 , len = pageSize
                 }
                 GotBuildings
+            )
+
+        else
+            ( incrRenderFrom model
+            , adjustScroll model scrollAdjustment
             )
 
 
@@ -122,6 +168,15 @@ acceptBuildings buildings model =
         | buildings = model.buildings ++ buildings
         , loadingMore = False
     }
+
+
+adjustScroll : Model -> Float -> Cmd Msg
+adjustScroll model adjustment =
+    Browser.Dom.setViewportOf
+        scrollContainerId
+        0
+        (model.scrollPosition - adjustment)
+        |> Task.attempt SetScroll
 
 
 
@@ -150,27 +205,11 @@ update msg model =
         GotBuildings result ->
             case result of
                 Ok moreBuildings ->
-                    let
-                        halfPageSize : Int
-                        halfPageSize =
-                            pageSize // 2
-
-                        scrollAdjustment : Float
-                        scrollAdjustment =
-                            toFloat halfPageSize * 64
-                    in
-                    Tuple.pair
-                        { model
-                            | buildings = model.buildings ++ moreBuildings
-                            , loadingMore = False
-                            , renderFrom = model.renderFrom + halfPageSize
-                        }
-                        (Browser.Dom.setViewportOf
-                            scrollContainerId
-                            0
-                            (model.scrollPosition - scrollAdjustment)
-                            |> Task.attempt SetScroll
-                        )
+                    ( model
+                        |> incrRenderFrom
+                        |> acceptBuildings moreBuildings
+                    , adjustScroll model scrollAdjustment
+                    )
 
                 Err _ ->
                     model
@@ -270,6 +309,7 @@ scrollContainer model =
                 (model.buildings
                     |> List.indexedMap Tuple.pair
                     |> List.drop model.renderFrom
+                    |> List.take pageSize
                     |> List.map buildingRow
                 )
                     ++ loading
