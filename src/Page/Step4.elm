@@ -36,6 +36,7 @@ type alias Model =
     , renderFrom : Int
     , loadingMore : Bool
     , scrollPosition : Float
+    , overscroll : Maybe ( Overscroll, Int )
     }
 
 
@@ -51,6 +52,11 @@ type alias ScrollEvent =
     , scrollTop : Float
     , elemHeight : Float
     }
+
+
+type Overscroll
+    = Top
+    | Bottom
 
 
 
@@ -69,6 +75,7 @@ init session =
             , renderFrom = 0
             , loadingMore = True
             , scrollPosition = 0
+            , overscroll = Nothing
             }
     in
     ( model
@@ -84,6 +91,23 @@ init session =
 --------------------------------------------------------------------------------
 -- HELPERS --
 --------------------------------------------------------------------------------
+
+
+incrOverscroll : Overscroll -> Model -> Model
+incrOverscroll overscrollDir model =
+    let
+        nextOverscrollCount : Int
+        nextOverscrollCount =
+            case model.overscroll of
+                Just ( _, c ) ->
+                    c + 1
+
+                Nothing ->
+                    0
+    in
+    { model
+        | overscroll = Just ( overscrollDir, nextOverscrollCount )
+    }
 
 
 pageSize : Int
@@ -111,6 +135,7 @@ incrRenderFrom model =
     { model
         | renderFrom = model.renderFrom + halfPageSize
     }
+        |> incrOverscroll Bottom
 
 
 handleScroll : ScrollEvent -> Model -> ( Model, Cmd Msg )
@@ -128,6 +153,7 @@ handleScroll event model =
         in
         if distanceToTop < bufferDistance && model.renderFrom > 0 then
             ( { model | renderFrom = max 0 (model.renderFrom - halfPageSize) }
+                |> incrOverscroll Top
             , adjustScroll model -scrollAdjustment
             )
 
@@ -155,7 +181,8 @@ handleScroll event model =
             )
 
         else
-            ( incrRenderFrom model
+            ( model
+                |> incrRenderFrom
             , adjustScroll model scrollAdjustment
             )
 
@@ -252,8 +279,8 @@ view model =
                     , S.w 10
                     ]
                 ]
-                [ Button.simple "Step 2"
-                    |> Button.asLink (Route.step 2)
+                [ Button.simple "Step 3"
+                    |> Button.asLink (Route.step 3)
                     |> Button.toHtml
                 ]
             ]
@@ -308,7 +335,7 @@ scrollContainer model =
                 )
                     ++ loading
     in
-    Html.div
+    Html.node "infinite-scroller"
         [ Attr.css
             [ S.indent
             , S.w 10
@@ -359,26 +386,36 @@ buildingRow ( index, building ) =
         [ Attr.css
             [ bgColor
             , S.p 4
-            , S.flex
+            , S.column
             , S.g 4
             ]
         ]
         [ Html.div
             [ Attr.css
-                [ S.indent
-                , Css.backgroundColor color
-                , S.w 5
-                , S.h 5
+                [ S.flex
+                , S.g 4
                 ]
             ]
-            []
+            [ Html.div
+                [ Attr.css
+                    [ S.indent
+                    , Css.backgroundColor color
+                    , S.w 5
+                    , S.h 5
+                    ]
+                ]
+                []
+            , Html.div
+                [ Attr.css
+                    [ S.column
+                    , S.justifyCenter
+                    ]
+                ]
+                [ Html.text label ]
+            ]
         , Html.div
-            [ Attr.css
-                [ S.column
-                , S.justifyCenter
-                ]
-            ]
-            [ Html.text label ]
+            []
+            [ Html.text building.description ]
         ]
 
 

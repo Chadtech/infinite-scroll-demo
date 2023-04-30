@@ -106,6 +106,7 @@ randomGenerator =
             , "Stagger Lee"
             , "Prospect Park"
             , "LifeCycle WomanCare"
+            , "Thompson Center"
             ]
 
         from : List ( Id, ( Int, Int ) ) -> List Building

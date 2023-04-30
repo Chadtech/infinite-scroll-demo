@@ -25,5 +25,14 @@ function jsMsgHandler(msg) {
 	action(msg.body);
 }
 
-app.ports.toJs.subscribe(jsMsgHandler)
+//app.ports.toJs.subscribe(jsMsgHandler)
 
+class InfiniteScroller extends HTMLElement {
+  constructor() {
+    super();
+
+    console.log("Yep!")
+  }
+}
+
+customElements.define("infinite-scroller", InfiniteScroller);
