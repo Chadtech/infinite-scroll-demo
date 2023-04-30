@@ -14,11 +14,11 @@ import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attr
 import Html.Styled.Events as Ev
 import Json.Decode as JD exposing (Decoder)
+import Json.Encode as JE
 import Layout exposing (Document)
 import Route
 import Session exposing (Session)
 import Style as S
-import Task
 import Util.Cmd as CmdUtil
 import Util.Demo as Demo
 import View.Button as Button
@@ -36,8 +36,14 @@ type alias Model =
     , renderFrom : Int
     , loadingMore : Bool
     , scrollPosition : Float
-    , overscroll : Maybe ( Overscroll, Int )
+    , recalculatePages : Int
+    , shift : Maybe ( Direction, Int )
     }
+
+
+type Direction
+    = Up
+    | Down
 
 
 type Msg
@@ -52,11 +58,6 @@ type alias ScrollEvent =
     , scrollTop : Float
     , elemHeight : Float
     }
-
-
-type Overscroll
-    = Top
-    | Bottom
 
 
 
@@ -75,7 +76,8 @@ init session =
             , renderFrom = 0
             , loadingMore = True
             , scrollPosition = 0
-            , overscroll = Nothing
+            , recalculatePages = 0
+            , shift = Nothing
             }
     in
     ( model
@@ -93,20 +95,10 @@ init session =
 --------------------------------------------------------------------------------
 
 
-incrOverscroll : Overscroll -> Model -> Model
-incrOverscroll overscrollDir model =
-    let
-        nextOverscrollCount : Int
-        nextOverscrollCount =
-            case model.overscroll of
-                Just ( _, c ) ->
-                    c + 1
-
-                Nothing ->
-                    0
-    in
+recalculatePages : Model -> Model
+recalculatePages model =
     { model
-        | overscroll = Just ( overscrollDir, nextOverscrollCount )
+        | recalculatePages = model.recalculatePages + 1
     }
 
 
@@ -125,17 +117,18 @@ bufferDistance =
     512
 
 
-scrollAdjustment : Float
-scrollAdjustment =
-    toFloat halfPageSize * 64
-
-
 incrRenderFrom : Model -> Model
 incrRenderFrom model =
     { model
         | renderFrom = model.renderFrom + halfPageSize
+        , shift =
+            case model.shift of
+                Just ( _, c ) ->
+                    Just ( Down, c + 1 )
+
+                Nothing ->
+                    Just ( Down, 0 )
     }
-        |> incrOverscroll Bottom
 
 
 handleScroll : ScrollEvent -> Model -> ( Model, Cmd Msg )
@@ -152,10 +145,17 @@ handleScroll event model =
                 event.scrollTop
         in
         if distanceToTop < bufferDistance && model.renderFrom > 0 then
-            ( { model | renderFrom = max 0 (model.renderFrom - halfPageSize) }
-                |> incrOverscroll Top
-            , adjustScroll model -scrollAdjustment
-            )
+            { model
+                | renderFrom = max 0 (model.renderFrom - halfPageSize)
+                , shift =
+                    case model.shift of
+                        Just ( _, c ) ->
+                            Just ( Up, c + 1 )
+
+                        Nothing ->
+                            Just ( Up, 0 )
+            }
+                |> CmdUtil.withNone
 
         else
             model
@@ -181,10 +181,9 @@ handleScroll event model =
             )
 
         else
-            ( model
+            model
                 |> incrRenderFrom
-            , adjustScroll model scrollAdjustment
-            )
+                |> CmdUtil.withNone
 
 
 acceptBuildings : List Building -> Model -> Model
@@ -193,15 +192,6 @@ acceptBuildings buildings model =
         | buildings = model.buildings ++ buildings
         , loadingMore = False
     }
-
-
-adjustScroll : Model -> Float -> Cmd Msg
-adjustScroll model adjustment =
-    Browser.Dom.setViewportOf
-        scrollContainerId
-        0
-        (model.scrollPosition - adjustment)
-        |> Task.attempt SetScroll
 
 
 
@@ -230,11 +220,10 @@ update msg model =
         GotBuildings result ->
             case result of
                 Ok moreBuildings ->
-                    ( model
+                    model
                         |> incrRenderFrom
                         |> acceptBuildings moreBuildings
-                    , adjustScroll model scrollAdjustment
-                    )
+                        |> CmdUtil.withNone
 
                 Err _ ->
                     model
@@ -248,9 +237,10 @@ update msg model =
             case result of
                 Ok buildings ->
                     acceptBuildings buildings model
+                        |> recalculatePages
                         |> CmdUtil.withNone
 
-                Err error ->
+                Err _ ->
                     model
                         |> CmdUtil.withNone
 
@@ -324,7 +314,7 @@ scrollContainer model =
         body : List (Html msg)
         body =
             if List.isEmpty model.buildings then
-                loading
+                loading "loading"
 
             else
                 (model.buildings
@@ -333,7 +323,29 @@ scrollContainer model =
                     |> List.take pageSize
                     |> List.map buildingRow
                 )
-                    ++ loading
+                    ++ loading "loading-bottom"
+
+        shiftJson : JE.Value
+        shiftJson =
+            case model.shift of
+                Just ( dir, c ) ->
+                    let
+                        dirStr : String
+                        dirStr =
+                            case dir of
+                                Up ->
+                                    "up"
+
+                                Down ->
+                                    "down"
+                    in
+                    JE.object
+                        [ Tuple.pair "direction" <| JE.string dirStr
+                        , Tuple.pair "count" <| JE.int c
+                        ]
+
+                Nothing ->
+                    JE.null
     in
     Html.node "infinite-scroller"
         [ Attr.css
@@ -343,20 +355,24 @@ scrollContainer model =
             , S.bgBackground1
             , S.scroll
             ]
+        , Attr.attribute "recalculate" <| String.fromInt model.recalculatePages
+        , Attr.attribute "shift" <| JE.encode 0 shiftJson
+        , Attr.attribute "pageShiftSize" <| String.fromInt halfPageSize
         , Ev.on "scroll" scrollDecoder
         , Attr.id scrollContainerId
         ]
         body
 
 
-loading : List (Html msg)
-loading =
+loading : String -> List (Html msg)
+loading id =
     [ Html.div
         [ Attr.css
             [ S.flex
             , S.justifyCenter
             , S.p 6
             ]
+        , Attr.id id
         ]
         [ Html.text "Loading.."
         ]
