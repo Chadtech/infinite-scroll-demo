@@ -8,6 +8,7 @@ import Layout exposing (Document)
 import Page.Step1 as Step1
 import Page.Step2 as Step2
 import Page.Step3 as Step3
+import Page.Step4 as Step4
 import Ports.Incoming
 import Route exposing (Route)
 import Session exposing (Session)
@@ -44,6 +45,7 @@ type Model
     | Step1 Step1.Model
     | Step2 Step2.Model
     | Step3 Step3.Model
+    | Step4 Step4.Model
 
 
 type Msg
@@ -53,6 +55,7 @@ type Msg
     | Step1Msg Step1.Msg
     | Step2Msg Step2.Msg
     | Step3Msg Step3.Msg
+    | Step4Msg Step4.Msg
 
 
 
@@ -92,6 +95,9 @@ getSession model =
 
         Step3 subModel ->
             Step3.getSession subModel
+
+        Step4 subModel ->
+            Step4.getSession subModel
 
 
 
@@ -149,6 +155,15 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        Step4Msg subMsg ->
+            case model of
+                Step4 subModel ->
+                    Step4.update subMsg subModel
+                        |> CmdUtil.mapBoth Step4 Step4Msg
+
+                _ ->
+                    ( model, Cmd.none )
+
 
 handleRouteChange : Maybe Route -> Model -> ( Model, Cmd Msg )
 handleRouteChange maybeRoute model =
@@ -183,6 +198,10 @@ handleRouteChange maybeRoute model =
                             Step3.init session
                                 |> CmdUtil.mapBoth Step3 Step3Msg
 
+                        4 ->
+                            Step4.init session
+                                |> CmdUtil.mapBoth Step4 Step4Msg
+
                         _ ->
                             PageNotFound session
                                 |> CmdUtil.withNone
@@ -213,6 +232,10 @@ view model =
         Step3 subModel ->
             Step3.view subModel
                 |> Layout.map Step3Msg
+
+        Step4 subModel ->
+            Step4.view subModel
+                |> Layout.map Step4Msg
 
 
 

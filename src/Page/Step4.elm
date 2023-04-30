@@ -1,4 +1,4 @@
-module Page.Step3 exposing
+module Page.Step4 exposing
     ( Model
     , Msg
     , getSession
@@ -250,14 +250,10 @@ view model =
                 [ Attr.css
                     [ S.flex
                     , S.w 10
-                    , S.spaceBetween
                     ]
                 ]
                 [ Button.simple "Step 2"
                     |> Button.asLink (Route.step 2)
-                    |> Button.toHtml
-                , Button.simple "Step 4"
-                    |> Button.asLink (Route.step 4)
                     |> Button.toHtml
                 ]
             ]
