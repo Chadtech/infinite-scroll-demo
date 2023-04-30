@@ -48,14 +48,31 @@ class InfiniteScroller extends HTMLElement {
 
     const pageShiftSize = parseInt(pageShiftStr)
 
-    let height = 0
+    const rows = []
+
     let i = 0
-    const elements = []
-    while (i < (pageShiftSize)) {
+    while (i < this.children.length) {
         const el = this.children[i]
+
+        if (el) {
+            console.log(el.tagName)
+            if (el.tagName === "ROW") {
+                rows.push(el)
+            }
+        }
+
+        i = i + 1
+    }
+
+    let height = 0
+
+    i = 0
+    const elements = []
+    while (i < pageShiftSize) {
+        const el = rows[i]
         if (el) {
             const elHeight = el.offsetHeight
-            console.log(elHeight)
+            console.log("El in calculation", el.getAttribute("data-label"), el.offsetHeight, el.tagName)
             height = height + elHeight
         }
 
@@ -81,8 +98,8 @@ class InfiniteScroller extends HTMLElement {
         if (payload !== null) {
           if (payload.direction === "down") {
             console.log("Setting scroll")
-            console.log(this.scrollTop)
-            console.log(this.aboveHeight)
+            console.log("Scroll top", this.scrollTop)
+            console.log("Calculated above height", this.aboveHeight)
             this.scrollTop = this.scrollTop - this.aboveHeight
 
             setTimeout(this.calculateTopElementsHeight, 0);

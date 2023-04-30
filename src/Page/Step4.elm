@@ -13,6 +13,7 @@ import Css
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attr
 import Html.Styled.Events as Ev
+import Html.Styled.Lazy
 import Json.Decode as JD exposing (Decoder)
 import Json.Encode as JE
 import Layout exposing (Document)
@@ -35,7 +36,6 @@ type alias Model =
     , buildings : List Building
     , renderFrom : Int
     , loadingMore : Bool
-    , scrollPosition : Float
     , recalculatePages : Int
     , shift : Maybe ( Direction, Int )
     }
@@ -75,7 +75,6 @@ init session =
             , buildings = []
             , renderFrom = 0
             , loadingMore = True
-            , scrollPosition = 0
             , recalculatePages = 0
             , shift = Nothing
             }
@@ -104,7 +103,7 @@ recalculatePages model =
 
 pageSize : Int
 pageSize =
-    64
+    32
 
 
 halfPageSize : Int
@@ -175,7 +174,7 @@ handleScroll event model =
             ( { model | loadingMore = True }
             , Demo.getBuildings
                 { from = List.length model.buildings
-                , len = pageSize
+                , len = pageSize * 2
                 }
                 GotBuildings
             )
@@ -215,7 +214,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Scrolled event ->
-            handleScroll event { model | scrollPosition = event.scrollTop }
+            handleScroll event model
 
         GotBuildings result ->
             case result of
@@ -284,7 +283,12 @@ view model =
                 , Css.minHeight Css.zero
                 ]
             ]
-            [ scrollContainer model
+            [ Html.Styled.Lazy.lazy4
+                scrollContainer
+                model.buildings
+                model.renderFrom
+                model.shift
+                model.recalculatePages
             ]
         ]
 
@@ -294,8 +298,8 @@ scrollContainerId =
     "scroll-container"
 
 
-scrollContainer : Model -> Html Msg
-scrollContainer model =
+scrollContainer : List Building -> Int -> Maybe ( Direction, Int ) -> Int -> Html Msg
+scrollContainer buildings renderFrom shift recalculateCount =
     let
         scrollDecoder : Decoder Msg
         scrollDecoder =
@@ -313,21 +317,29 @@ scrollContainer model =
 
         body : List (Html msg)
         body =
-            if List.isEmpty model.buildings then
+            if List.isEmpty buildings then
                 loading "loading"
 
             else
-                (model.buildings
-                    |> List.indexedMap Tuple.pair
-                    |> List.drop model.renderFrom
-                    |> List.take pageSize
+                let
+                    _ =
+                        Debug.log "RENDERING" (List.length buildings)
+
+                    sliceOfBuildings : List ( Int, Building )
+                    sliceOfBuildings =
+                        buildings
+                            |> List.indexedMap Tuple.pair
+                            |> List.drop (Debug.log "RENDER FROM" renderFrom)
+                            |> List.take pageSize
+                in
+                (sliceOfBuildings
                     |> List.map buildingRow
                 )
                     ++ loading "loading-bottom"
 
         shiftJson : JE.Value
         shiftJson =
-            case model.shift of
+            case shift of
                 Just ( dir, c ) ->
                     let
                         dirStr : String
@@ -355,7 +367,7 @@ scrollContainer model =
             , S.bgBackground1
             , S.scroll
             ]
-        , Attr.attribute "recalculate" <| String.fromInt model.recalculatePages
+        , Attr.attribute "recalculate" <| String.fromInt recalculateCount
         , Attr.attribute "shift" <| JE.encode 0 shiftJson
         , Attr.attribute "pageShiftSize" <| String.fromInt halfPageSize
         , Ev.on "scroll" scrollDecoder
@@ -396,15 +408,17 @@ buildingRow ( index, building ) =
 
         label : String
         label =
-            building.name ++ " - " ++ String.fromInt index
+            (building.name ++ " - " ++ String.fromInt index)
+                |> Debug.log "Label in view"
     in
-    Html.div
+    Html.node "row"
         [ Attr.css
             [ bgColor
             , S.p 4
             , S.column
             , S.g 4
             ]
+        , Attr.attribute "data-label" label
         ]
         [ Html.div
             [ Attr.css
