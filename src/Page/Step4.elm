@@ -106,20 +106,22 @@ pageSize =
     32
 
 
-halfPageSize : Int
-halfPageSize =
-    pageSize // 2
+shiftPageSize : Int
+shiftPageSize =
+    1
 
 
 bufferDistance : Float
 bufferDistance =
-    512
+    --512
+    --256
+    1536
 
 
 incrRenderFrom : Model -> Model
 incrRenderFrom model =
     { model
-        | renderFrom = model.renderFrom + halfPageSize
+        | renderFrom = model.renderFrom + shiftPageSize
         , shift =
             case model.shift of
                 Just ( _, c ) ->
@@ -145,7 +147,7 @@ handleScroll event model =
         in
         if distanceToTop < bufferDistance && model.renderFrom > 0 then
             { model
-                | renderFrom = max 0 (model.renderFrom - halfPageSize)
+                | renderFrom = max 0 (model.renderFrom - shiftPageSize)
                 , shift =
                     case model.shift of
                         Just ( _, c ) ->
@@ -366,10 +368,11 @@ scrollContainer buildings renderFrom shift recalculateCount =
             , S.hFull
             , S.bgBackground1
             , S.scroll
+            , S.relative
             ]
         , Attr.attribute "recalculate" <| String.fromInt recalculateCount
         , Attr.attribute "shift" <| JE.encode 0 shiftJson
-        , Attr.attribute "pageShiftSize" <| String.fromInt halfPageSize
+        , Attr.attribute "pageShiftSize" <| String.fromInt shiftPageSize
         , Ev.on "scroll" scrollDecoder
         , Attr.id scrollContainerId
         ]
@@ -410,6 +413,16 @@ buildingRow ( index, building ) =
         label =
             (building.name ++ " - " ++ String.fromInt index)
                 |> Debug.log "Label in view"
+
+        description : Html msg
+        description =
+            if String.isEmpty building.description then
+                Html.text ""
+
+            else
+                Html.div
+                    []
+                    [ Html.text building.description ]
     in
     Html.node "row"
         [ Attr.css
@@ -443,9 +456,7 @@ buildingRow ( index, building ) =
                 ]
                 [ Html.text label ]
             ]
-        , Html.div
-            []
-            [ Html.text building.description ]
+        , description
         ]
 
 

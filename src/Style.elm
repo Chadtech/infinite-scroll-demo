@@ -1,4 +1,4 @@
-module Style exposing (bgBackground1, bgBackground2, column, flex, fontSize, g, globals, h, hFull, importantIndent, importantOutdent, indent, justifyCenter, justifyEnd, m, mb, mt, none, outdent, p, scroll, spaceBetween, w)
+module Style exposing (bgBackground1, bgBackground2, column, flex, fontSize, g, globals, h, hFull, importantIndent, importantOutdent, indent, justifyCenter, justifyEnd, m, mb, mt, none, outdent, p, relative, scroll, spaceBetween, w)
 
 import Chadtech.Colors as Ct
 import Css exposing (Style)
@@ -151,6 +151,11 @@ bgBackground2 =
 scroll : Style
 scroll =
     Css.overflow Css.auto
+
+
+relative : Style
+relative =
+    Css.position Css.relative
 
 
 indent : Css.Style
