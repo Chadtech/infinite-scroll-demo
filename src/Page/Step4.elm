@@ -424,7 +424,10 @@ buildingRow ( index, building ) =
                     []
                     [ Html.text building.description ]
     in
-    Html.node "row"
+    Html.node
+        ("row-"
+            ++ String.fromInt index
+        )
         [ Attr.css
             [ bgColor
             , S.p 4
@@ -432,6 +435,7 @@ buildingRow ( index, building ) =
             , S.g 4
             ]
         , Attr.attribute "data-label" label
+        , Attr.attribute "data-scroll-row" label
         ]
         [ Html.div
             [ Attr.css

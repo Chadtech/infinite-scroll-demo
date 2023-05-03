@@ -28,86 +28,81 @@ function jsMsgHandler(msg) {
 //app.ports.toJs.subscribe(jsMsgHandler)
 
 class InfiniteScroller extends HTMLElement {
-  constructor() {
-    super();
+    constructor() {
+        super();
 
-    this.aboveHeight = null;
-    this.scrollPos = 0
-    this.nextAdjustment = null
+        this.aboveHeight = null;
+        this.scrollPos = 0
+        this.nextAdjustment = null
 
-    this.calculateTopElementsHeight = this.calculateTopElementsHeight.bind(this)
-    this.scrolled = this.scrolled.bind(this)
-    this.setScroll = this.setScroll.bind(this)
-
-  }
-
-  connectedCallback() {
-    this.addEventListener("scroll", this.scrolled)
-  }
-
-  setScroll() {
-    this.scrollTop = this.scrollPos - this.nextAdjustment
-  }
-
-  scrolled(e) {
-    this.scrollPos = e.target.scrollTop
-  }
-
-  calculateTopElementsHeight(f) {
-    const pageShiftStr = this.getAttribute("pageShiftSize");
-    if (pageShiftStr === null) {
-        return
+        this.calculateTopElementsHeight = this.calculateTopElementsHeight.bind(this)
+        this.scrolled = this.scrolled.bind(this)
+        this.setScroll = this.setScroll.bind(this)
     }
 
-    const pageShiftSize = parseInt(pageShiftStr)
+    connectedCallback() {
+        this.addEventListener("scroll", this.scrolled)
+    }
 
-    const rows = []
+    setScroll() {
+        this.scrollTop = this.scrollPos - this.nextAdjustment
+    }
 
-    let i = 0
-    while (i < this.children.length) {
-        const el = this.children[i]
+    scrolled(e) {
+        this.scrollPos = e.target.scrollTop
+    }
 
-        if (el) {
-            if (el.tagName === "ROW") {
+    calculateTopElementsHeight(f) {
+        const pageShiftStr = this.getAttribute("pageShiftSize");
+        if (pageShiftStr === null) {
+            return
+        }
+
+        const pageShiftSize = parseInt(pageShiftStr)
+
+        const rows = []
+
+        let i = 0
+        while (i < this.children.length) {
+            const el = this.children[i]
+
+            if (el && el.getAttribute("data-scroll-row")) {
                 rows.push(el)
             }
+
+            i = i + 1
         }
 
-        i = i + 1
-    }
+        const nextTopEl = rows[pageShiftSize]
 
-    const nextTopEl = rows[pageShiftSize]
+        if (nextTopEl) {
+            this.aboveHeight = nextTopEl.offsetTop
+        }
 
-    if (nextTopEl) {
-      console.log("Next Top El Pos", nextTopEl.getAttribute("data-label"), nextTopEl.offsetTop)
-      this.aboveHeight = nextTopEl.offsetTop
-    }
 
-    console.log("Scroll Top in calculate", this.scrollTop)
-
-    if (this.nextAdjustment) {
-
-      this.nextAdjustment = null
-    }
-  }
-
-  static get observedAttributes() {
-    return ['recalculate', 'shift'];
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (name === "recalculate" && oldValue !== newValue) {
-        setTimeout(this.calculateTopElementsHeight, 0);
-    }
-
-    if (name === "shift" && oldValue !== newValue) {
-        const payload = JSON.parse(newValue);
-        if (payload && payload.direction === "down") {
-          this.nextAdjustment = 0 + this.aboveHeight
-          setTimeout(this.setScroll, 0)
-          setTimeout(this.calculateTopElementsHeight, 0)
+        if (this.nextAdjustment) {
+            this.nextAdjustment = null
         }
     }
+
+    static get observedAttributes() {
+        return ['recalculate', 'shift'];
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === "recalculate" && oldValue !== newValue) {
+            setTimeout(this.calculateTopElementsHeight, 0);
+        }
+
+        if (name === "shift" && oldValue !== newValue) {
+            const payload = JSON.parse(newValue);
+            if (payload && payload.direction === "down") {
+                this.nextAdjustment = 0 + this.aboveHeight
+//                setTimeout(this.setScroll, 0)
+                this.setScroll()
+                setTimeout(this.calculateTopElementsHeight, 0)
+            }
+        }
   }
 }
 
