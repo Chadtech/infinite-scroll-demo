@@ -33,23 +33,17 @@ class InfiniteScroller extends HTMLElement {
 
         this.aboveHeight = null;
         this.scrollPos = 0
-        this.nextAdjustment = null
 
         this.calculateTopElementsHeight = this.calculateTopElementsHeight.bind(this)
         this.scrolled = this.scrolled.bind(this)
-        this.setScroll = this.setScroll.bind(this)
     }
 
     connectedCallback() {
         this.addEventListener("scroll", this.scrolled)
     }
 
-    setScroll() {
-        this.scrollTop = this.scrollPos - this.nextAdjustment
-    }
-
-    scrolled(e) {
-        this.scrollPos = e.target.scrollTop
+    scrolled(event) {
+        this.scrollPos = event.target.scrollTop
     }
 
     calculateTopElementsHeight(f) {
@@ -78,11 +72,6 @@ class InfiniteScroller extends HTMLElement {
         if (nextTopEl) {
             this.aboveHeight = nextTopEl.offsetTop
         }
-
-
-        if (this.nextAdjustment) {
-            this.nextAdjustment = null
-        }
     }
 
     static get observedAttributes() {
@@ -97,9 +86,7 @@ class InfiniteScroller extends HTMLElement {
         if (name === "shift" && oldValue !== newValue) {
             const payload = JSON.parse(newValue);
             if (payload && payload.direction === "down") {
-                this.nextAdjustment = 0 + this.aboveHeight
-//                setTimeout(this.setScroll, 0)
-                this.setScroll()
+                this.scrollTop = this.scrollPos - this.aboveHeight
                 setTimeout(this.calculateTopElementsHeight, 0)
             }
         }

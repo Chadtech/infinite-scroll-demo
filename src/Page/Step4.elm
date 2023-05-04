@@ -108,13 +108,11 @@ pageSize =
 
 shiftPageSize : Int
 shiftPageSize =
-    1
+    pageSize // 2
 
 
 bufferDistance : Float
 bufferDistance =
-    --512
-    --256
     1536
 
 
@@ -320,24 +318,19 @@ scrollContainer buildings renderFrom shift recalculateCount =
         body : List (Html msg)
         body =
             if List.isEmpty buildings then
-                loading "loading"
+                loading
 
             else
                 let
-                    _ =
-                        Debug.log "RENDERING" (List.length buildings)
-
                     sliceOfBuildings : List ( Int, Building )
                     sliceOfBuildings =
                         buildings
                             |> List.indexedMap Tuple.pair
-                            |> List.drop (Debug.log "RENDER FROM" renderFrom)
+                            |> List.drop renderFrom
                             |> List.take pageSize
                 in
-                (sliceOfBuildings
-                    |> List.map buildingRow
-                )
-                    ++ loading "loading-bottom"
+                List.map buildingRow sliceOfBuildings
+                    ++ loading
 
         shiftJson : JE.Value
         shiftJson =
@@ -379,15 +372,14 @@ scrollContainer buildings renderFrom shift recalculateCount =
         body
 
 
-loading : String -> List (Html msg)
-loading id =
+loading : List (Html msg)
+loading =
     [ Html.div
         [ Attr.css
             [ S.flex
             , S.justifyCenter
             , S.p 6
             ]
-        , Attr.id id
         ]
         [ Html.text "Loading.."
         ]
@@ -411,8 +403,7 @@ buildingRow ( index, building ) =
 
         label : String
         label =
-            (building.name ++ " - " ++ String.fromInt index)
-                |> Debug.log "Label in view"
+            building.name ++ " - " ++ String.fromInt index
 
         description : Html msg
         description =
@@ -425,9 +416,7 @@ buildingRow ( index, building ) =
                     [ Html.text building.description ]
     in
     Html.node
-        ("row-"
-            ++ String.fromInt index
-        )
+        ("row-" ++ String.fromInt index)
         [ Attr.css
             [ bgColor
             , S.p 4
