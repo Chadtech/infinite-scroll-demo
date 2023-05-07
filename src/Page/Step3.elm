@@ -300,17 +300,13 @@ scrollContainer model =
 
         body : List (Html msg)
         body =
-            if List.isEmpty model.buildings then
-                loading
-
-            else
-                (model.buildings
-                    |> List.indexedMap Tuple.pair
-                    |> List.drop model.renderFrom
-                    |> List.take pageSize
-                    |> List.map buildingRow
-                )
-                    ++ loading
+            (model.buildings
+                |> List.indexedMap Tuple.pair
+                |> List.drop model.renderFrom
+                |> List.take pageSize
+                |> List.map buildingRow
+            )
+                ++ loading
     in
     Html.div
         [ Attr.css

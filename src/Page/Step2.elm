@@ -209,14 +209,6 @@ scrollContainer model =
             in
             eventDecoder
                 |> JD.andThen isCloseToBottom
-
-        body : List (Html msg)
-        body =
-            if List.isEmpty model.buildings then
-                loading
-
-            else
-                List.indexedMap buildingRow model.buildings ++ loading
     in
     Html.div
         [ Attr.css
@@ -228,7 +220,7 @@ scrollContainer model =
             ]
         , Ev.on "scroll" scrollDecoder
         ]
-        body
+        (List.indexedMap buildingRow model.buildings ++ loading)
 
 
 loading : List (Html msg)
